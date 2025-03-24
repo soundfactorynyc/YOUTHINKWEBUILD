@@ -1,0 +1,349 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Container, 
+  Typography, 
+  TextField, 
+  Button, 
+  Paper, 
+  Grid, 
+  CircularProgress,
+  Tabs,
+  Tab,
+  Box,
+  Alert,
+  Snackbar,
+  Divider,
+  Chip
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { generateSiteContent, parseGeneratedContent, saveToFirebase, generateCombinedHtml } from '../services/aiService';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+
+// Note: You'll need to install the codemirror packages with:
+// npm install @uiw/react-codemirror @codemirror/lang-javascript @codemirror/lang-html @codemirror/lang-css
+
+const SiteGenerator = () => {
+  const [prompt, setPrompt] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [generatedContent, setGeneratedContent] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [tabValue, setTabValue] = useState(0);
+  const [htmlCode, setHtmlCode] = useState('');
+  const [cssCode, setCssCode] = useState('');
+  const [jsCode, setJsCode] = useState('');
+  const [previewKey, setPreviewKey] = useState(0);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const iframeRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (generatedContent) {
+      setHtmlCode(generatedContent.html);
+      setCssCode(generatedContent.css);
+      setJsCode(generatedContent.js);
+    }
+  }, [generatedContent]);
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  const updatePreview = () => {
+    if (iframeRef.current) {
+      try {
+        const content = {
+          html: htmlCode,
+          css: cssCode,
+          js: jsCode
+        };
+        
+        const combinedHtml = generateCombinedHtml(content);
+        const iframe = iframeRef.current;
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        
+        iframeDoc.open();
+        iframeDoc.write(combinedHtml);
+        iframeDoc.close();
+      } catch (error) {
+        console.error('Error updating preview:', error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (htmlCode || cssCode || jsCode) {
+      updatePreview();
+    }
+  }, [htmlCode, cssCode, jsCode, previewKey]);
+
+  const refreshPreview = () => {
+    setPreviewKey(prev => prev + 1);
+  };
+
+  const handleGenerate = async () => {
+    if (!prompt) {
+      setError('Please enter a description of the site you want to create');
+      return;
+    }
+
+    if (!projectName) {
+      setError('Please enter a project name');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const promptWithGuidance = `Create a responsive website with the following description: ${prompt}. 
+      Please provide only the HTML, CSS, and JavaScript code without explanations.
+      Format your response with the code blocks clearly marked as:
+      \`\`\`html
+      <!-- HTML code here -->
+      \`\`\`
+      
+      \`\`\`css
+      /* CSS code here */
+      \`\`\`
+      
+      \`\`\`javascript
+      // JavaScript code here
+      \`\`\``;
+
+      const content = await generateSiteContent(promptWithGuidance);
+      const parsed = parseGeneratedContent(content);
+      
+      setGeneratedContent(parsed);
+      setHtmlCode(parsed.html);
+      setCssCode(parsed.css);
+      setJsCode(parsed.js);
+      
+      // Refresh the preview
+      refreshPreview();
+      
+      // Switch to preview tab
+      setTabValue(0);
+    } catch (err) {
+      setError('Error generating content: ' + (err.message || 'Please try again.'));
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!htmlCode && !cssCode && !jsCode) {
+      setError('No content to save. Please generate or create content first.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const content = {
+        html: htmlCode,
+        css: cssCode,
+        js: jsCode
+      };
+      
+      const projectId = await saveToFirebase(projectName, content, prompt);
+      setLoading(false);
+      
+      setSnackbarMessage('Project saved successfully!');
+      setOpenSnackbar(true);
+      
+      // After a short delay, navigate to dashboard
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+    } catch (err) {
+      setError('Error saving project: ' + (err.message || 'Please try again.'));
+      setLoading(false);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
+
+  const renderExamplePrompts = () => {
+    const examples = [
+      "A portfolio website for a photographer with image gallery",
+      "A landing page for a fitness app with features and pricing",
+      "A blog homepage with recent posts and newsletter signup",
+      "A restaurant website with menu and reservation form"
+    ];
+
+    return (
+      <Box sx={{ mt: 2 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Example prompts:
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {examples.map((example, index) => (
+            <Chip 
+              key={index} 
+              label={example} 
+              variant="outlined" 
+              onClick={() => setPrompt(example)}
+              sx={{ mb: 1 }}
+            />
+          ))}
+        </Box>
+      </Box>
+    );
+  };
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        AI Website Generator
+      </Typography>
+      
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <TextField
+              label="Project Name"
+              fullWidth
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              margin="normal"
+              required
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              label="Describe the website you want to create"
+              multiline
+              rows={4}
+              fullWidth
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="E.g., Create a responsive landing page for a fitness app with a hero section, features section, and pricing plans..."
+              margin="normal"
+              required
+            />
+            {renderExamplePrompts()}
+          </Grid>
+          <Grid item xs={12}>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={handleGenerate}
+              disabled={loading}
+              sx={{ mr: 2 }}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Generate Website'}
+            </Button>
+            
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              onClick={handleSave}
+              disabled={loading || (!htmlCode && !cssCode && !jsCode)}
+            >
+              Save Project
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {(htmlCode || cssCode || jsCode) && (
+        <Paper sx={{ mb: 4 }}>
+          <Tabs 
+            value={tabValue} 
+            onChange={handleTabChange}
+            sx={{ borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab label="Preview" />
+            <Tab label="HTML" />
+            <Tab label="CSS" />
+            <Tab label="JavaScript" />
+          </Tabs>
+          
+          <Box sx={{ p: 3 }}>
+            {tabValue === 0 && (
+              <>
+                <Box sx={{ mb: 2 }}>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    onClick={refreshPreview}
+                  >
+                    Refresh Preview
+                  </Button>
+                </Box>
+                <Box 
+                  sx={{ 
+                    border: '1px solid #ddd', 
+                    borderRadius: 1, 
+                    height: '500px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <iframe
+                    key={previewKey}
+                    ref={iframeRef}
+                    title="Website Preview"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 'none' }}
+                  />
+                </Box>
+              </>
+            )}
+            {tabValue === 1 && (
+              <Box sx={{ height: '500px', border: '1px solid #ddd', borderRadius: 1 }}>
+                <CodeMirror
+                  value={htmlCode}
+                  height="500px"
+                  extensions={[html()]}
+                  onChange={(value) => setHtmlCode(value)}
+                />
+              </Box>
+            )}
+            {tabValue === 2 && (
+              <Box sx={{ height: '500px', border: '1px solid #ddd', borderRadius: 1 }}>
+                <CodeMirror
+                  value={cssCode}
+                  height="500px"
+                  extensions={[css()]}
+                  onChange={(value) => setCssCode(value)}
+                />
+              </Box>
+            )}
+            {tabValue === 3 && (
+              <Box sx={{ height: '500px', border: '1px solid #ddd', borderRadius: 1 }}>
+                <CodeMirror
+                  value={jsCode}
+                  height="500px"
+                  extensions={[javascript()]}
+                  onChange={(value) => setJsCode(value)}
+                />
+              </Box>
+            )}
+          </Box>
+        </Paper>
+      )}
+
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        message={snackbarMessage}
+      />
+    </Container>
+  );
+};
+
+export default SiteGenerator;
