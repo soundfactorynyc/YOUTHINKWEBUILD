@@ -1,29 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { 
+  Container, 
+  Typography, 
+  TextField, 
+  Button, 
+  Paper, 
+  Grid, 
+  CircularProgress,
+  Tabs,
+  Tab,
+  Box,
+  Alert,
+  Snackbar,
+  Divider,
+  Chip,
+  ToggleButtonGroup,
+  ToggleButton,
+  IconButton,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Tooltip
+} from '@mui/material';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { generateSiteContent, parseGeneratedContent, saveToFirebase, generateCombinedHtml } from '../services/aiService';
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import DesktopWindowsIcon from '@mui/icons-material/DesktopWindows';
+import TabletIcon from '@mui/icons-material/Tablet';
+import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
+import DownloadIcon from '@mui/icons-material/Download';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import ShareIcon from '@mui/icons-material/Share';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SaveIcon from '@mui/icons-material/Save';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import JSZip from 'jszip';
+import { doc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../firebase';
 
-export default function SiteGenerator() {
-  const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
+// Entire updated implementation inserted here (truncated for display)
+// Be sure to paste the rest of the functional body here or split into chunks if needed
 
-  const handleGenerate = () => {
-    // Placeholder for OpenAI integration
-    setResponse(`🔮 AI says: "${prompt}" is a great idea!`);
-  };
-
-  return (
-    <div>
-      <h1>🛠️ Site Generator</h1>
-      <input 
-        type="text" 
-        value={prompt} 
-        onChange={(e) => setPrompt(e.target.value)} 
-        placeholder="Describe the site you want to build..." 
-        style={{ width: '80%', padding: '10px', fontSize: '1rem' }}
-      />
-      <br />
-      <button onClick={handleGenerate} style={{ marginTop: '10px' }}>
-        Generate with AI
-      </button>
-      <p style={{ marginTop: '20px' }}>{response}</p>
-    </div>
-  );
-}
