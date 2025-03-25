@@ -1,33 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="YouThinkWeBuild – AI + Drag-and-Drop Website Builder" />
-    <title>YouThinkWeBuild</title>
-  </head>
-
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-
-    <!-- 🔲 Mount point for React -->
-    <div id="root"></div>
-
-    <!-- 🔲 Drag-and-drop container for component system -->
-    <div id="website-container"></div>
-
-    <!-- ⚙️ Load Component System -->
-    <script src="component-system.js"></script>
-
-    <!-- ⚡️ Initialize Component System -->
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        if (window.YouThinkWeBuild) {
-          window.YouThinkWeBuild.initComponentSystem('website-container');
-        }
-      });
-    </script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouThinkWeBuild - Advanced Website Builder</title>
+  
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <!-- Your custom styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Main toolbar -->
+  <div class="main-toolbar">
+    <div class="logo">YouThinkWeBuild</div>
+    <div class="tools">
+      <button id="open-component-panel">Components</button>
+      <button id="open-interaction-panel">Interactions</button>
+      <button id="open-api-panel">APIs</button>
+      <button id="preview-site">Preview</button>
+      <button id="export-site">Export</button>
+    </div>
+  </div>
+  
+  <!-- Editor panels -->
+  <div id="component-editor"></div>
+  <div id="interaction-editor"></div>
+  <div id="api-editor"></div>
+  
+  <!-- Main website container -->
+  <div id="website-container"></div>
+  
+  <!-- Script imports -->
+  <script src="component-system.js"></script>
+  <script src="interactions.js"></script>
+  <script src="api-integration.js"></script>
+  <script src="main.js"></script>
+</body>
 </html>
