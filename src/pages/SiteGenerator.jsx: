@@ -1,0 +1,12 @@
+import React from 'react';
+
+function SiteGenerator() {
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h1>AI Website Generator</h1>
+      <p>This is your Site Generator page.</p>
+    </div>
+  );
+}
+
+export default SiteGenerator;
